@@ -5,84 +5,70 @@ namespace NetIdentity.Data
 {
     public static class SeedData
     {
-        public static async Task Initialize(IServiceProvider serviceProvider)
+        public static async Task Inicializar(IServiceProvider servicios)
         {
-            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            var roles = servicios.GetRequiredService<RoleManager<IdentityRole>>();
+            var usuarios = servicios.GetRequiredService<UserManager<ApplicationUser>>();
+            var db = servicios.GetRequiredService<ApplicationDbContext>();
+            db.Database.EnsureCreated();
 
-            context.Database.EnsureCreated();
-
-            string[] roleNames = { "Admin", "Usuario" };
-            foreach (var roleName in roleNames)
+            string[] nombresRoles = { "Admin", "Usuario" };
+            foreach (var r in nombresRoles)
             {
-                if (!await roleManager.RoleExistsAsync(roleName))
-                {
-                    await roleManager.CreateAsync(new IdentityRole(roleName));
-                }
+                if (!await roles.RoleExistsAsync(r))
+                    await roles.CreateAsync(new IdentityRole(r));
             }
 
-            if (await userManager.FindByEmailAsync("admin@test.com") == null)
+            if (await usuarios.FindByEmailAsync("admin@local.com") == null)
             {
-                var adminUser = new ApplicationUser
+                var admin = new ApplicationUser
                 {
-                    UserName = "admin@test.com",
-                    Email = "admin@test.com",
-                    FechaNacimiento = DateTime.Now.AddYears(-30),
-                    NombreCompleto = "Administrador Sistema",
+                    UserName = "admin@local.com",
+                    Email = "admin@local.com",
+                    FechaNacimiento = DateTime.Now.AddYears(-40),
+                    NombreCompleto = "AdminGeneral",
+                    EsFemenino = false,
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(adminUser, "Admin123!");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(adminUser, "Admin");
-                    await userManager.AddClaimAsync(adminUser,
-                        new System.Security.Claims.Claim("FechaNacimiento", adminUser.FechaNacimiento.ToString("yyyy-MM-dd")));
-                }
+                var crear = await usuarios.CreateAsync(admin, "ClaveAdmin1!");
+                if (crear.Succeeded)
+                    await usuarios.AddToRoleAsync(admin, "Admin");
             }
 
-            if (await userManager.FindByEmailAsync("menor@test.com") == null)
+            if (await usuarios.FindByEmailAsync("menor@local.com") == null)
             {
-                var userMenor = new ApplicationUser
+                var menorEdad = new ApplicationUser
                 {
-                    UserName = "menor@test.com",
-                    Email = "menor@test.com",
+                    UserName = "menor@local.com",
+                    Email = "menor@local.com",
                     FechaNacimiento = DateTime.Now.AddYears(-15),
-                    NombreCompleto = "Juan Menor",
+                    NombreCompleto = "UsuarioMenorEdad",
+                    EsFemenino = false,
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(userMenor, "Menor123!");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(userMenor, "Usuario");
-                    await userManager.AddClaimAsync(userMenor,
-                        new System.Security.Claims.Claim("FechaNacimiento", userMenor.FechaNacimiento.ToString("yyyy-MM-dd")));
-                }
+                var crear = await usuarios.CreateAsync(menorEdad, "ClaveMenor1!");
+                if (crear.Succeeded)
+                    await usuarios.AddToRoleAsync(menorEdad, "Usuario");
             }
 
-            if (await userManager.FindByEmailAsync("mayor@test.com") == null)
+            if (await usuarios.FindByEmailAsync("mayor@local.com") == null)
             {
-                var userMayor = new ApplicationUser
+                var mayorEdad = new ApplicationUser
                 {
-                    UserName = "mayor@test.com",
-                    Email = "mayor@test.com",
-                    FechaNacimiento = DateTime.Now.AddYears(-25),
-                    NombreCompleto = "María Mayor",
+                    UserName = "mayor@local.com",
+                    Email = "mayor@local.com",
+                    FechaNacimiento = DateTime.Now.AddYears(-22),
+                    NombreCompleto = "UsuariaMayorEdad",
+                    EsFemenino = true,
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(userMayor, "Mayor123!");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(userMayor, "Usuario");
-                    await userManager.AddClaimAsync(userMayor,
-                        new System.Security.Claims.Claim("FechaNacimiento", userMayor.FechaNacimiento.ToString("yyyy-MM-dd")));
-                }
+                var crear = await usuarios.CreateAsync(mayorEdad, "ClaveMayor1!");
+                if (crear.Succeeded)
+                    await usuarios.AddToRoleAsync(mayorEdad, "Usuario");
             }
         }
     }
-
-
 }

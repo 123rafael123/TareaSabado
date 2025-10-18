@@ -1,28 +1,44 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NetIdentity.Models;
 
 namespace NetIdentity.Controllers
 {
-    
     public class JuegosController : Controller
     {
-        [Authorize(Policy = "menoresEdad")]
-        public IActionResult Index()
+        private readonly UserManager<ApplicationUser> datos;
+
+        public JuegosController(UserManager<ApplicationUser> gestor)
         {
-            return View();
+            datos = gestor;
+        }
+
+        [Authorize(Policy = "menoresEdad")]
+        public async Task<IActionResult> ZonaMenorEdad()
+        {
+            var actual = await datos.GetUserAsync(User);
+            if (actual != null && actual.EsFemenino)
+                return Content("🚫 No disponible para género femenino.");
+            return View("Index");
         }
 
         [Authorize(Roles = "Admin,Usuario")]
-        public IActionResult JuegoEducativo()
+        public async Task<IActionResult> ModoLibre()
         {
-            return View();
+            var actual = await datos.GetUserAsync(User);
+            if (actual != null && actual.EsFemenino)
+                return Content("Solo permitido para género masculino.");
+            return View("JuegoEducativo");
         }
 
         [Authorize(Roles = "Admin")]
-        public IActionResult Aventuras()
+        public async Task<IActionResult> ZonaAdmin()
         {
-            return View();
+            var actual = await datos.GetUserAsync(User);
+            if (actual != null && actual.EsFemenino)
+                return Content("Acceso bloqueado para género femenino.");
+            return View("Aventuras");
         }
     }
-
 }

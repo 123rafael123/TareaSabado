@@ -6,84 +6,68 @@ namespace NetIdentity.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> loginManager;
+        private readonly UserManager<ApplicationUser> userData;
 
-        public AccountController(
-            SignInManager<ApplicationUser> signInManager,
-            UserManager<ApplicationUser> userManager)
+        public AccountController(SignInManager<ApplicationUser> loginMgr, UserManager<ApplicationUser> userMgr)
         {
-            _signInManager = signInManager;
-            _userManager = userManager;
+            loginManager = loginMgr;
+            userData = userMgr;
         }
 
         [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
+        public IActionResult IniciarSesion() => View("Login");
 
         [HttpPost]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> IniciarSesion(string correo, string clave)
         {
-            var user = await _userManager.FindByEmailAsync(email);
-            if (user != null)
+            var persona = await userData.FindByEmailAsync(correo);
+            if (persona != null)
             {
-                var result = await _signInManager.PasswordSignInAsync(user, password, false, false);
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index", "Home");
-                }
+                var ingreso = await loginManager.PasswordSignInAsync(persona, clave, false, false);
+                if (ingreso.Succeeded)
+                    return RedirectToAction("Inicio", "Home");
             }
-            ViewBag.Error = "Email o contraseña incorrectos";
-            return View();
+
+            ViewBag.Error = "Datos incorrectos, revisa tu correo o contraseña.";
+            return View("Login");
         }
 
         [HttpPost]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> CerrarSesion()
         {
-            await _signInManager.SignOutAsync();
-            return RedirectToAction("Index", "Home");
+            await loginManager.SignOutAsync();
+            return RedirectToAction("Inicio", "Home");
         }
 
         [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        public IActionResult Registro() => View("Register");
 
         [HttpPost]
-        public async Task<IActionResult> Register(string email, string password, DateTime fechaNacimiento, string nombreCompleto)
+        public async Task<IActionResult> Registro(string correo, string clave, DateTime nacimiento, string nombre, bool esMujer)
         {
-            var user = new ApplicationUser
+            var nuevo = new ApplicationUser
             {
-                UserName = email,
-                Email = email,
-                FechaNacimiento = fechaNacimiento,
-                NombreCompleto = nombreCompleto
+                UserName = correo,
+                Email = correo,
+                FechaNacimiento = nacimiento,
+                NombreCompleto = nombre,
+                EsFemenino = esMujer
             };
 
-            var result = await _userManager.CreateAsync(user, password);
-            if (result.Succeeded)
+            var crear = await userData.CreateAsync(nuevo, clave);
+            if (crear.Succeeded)
             {
-                await _userManager.AddClaimAsync(user,
-                    new System.Security.Claims.Claim("FechaNacimiento", fechaNacimiento.ToString("yyyy-MM-dd")));
-
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Index", "Home");
+                await userData.AddClaimAsync(nuevo, new System.Security.Claims.Claim("FechaNacimiento", nacimiento.ToString("yyyy-MM-dd")));
+                await userData.AddClaimAsync(nuevo, new System.Security.Claims.Claim("Genero", esMujer ? "Femenino" : "Masculino"));
+                await loginManager.SignInAsync(nuevo, false);
+                return RedirectToAction("Inicio", "Home");
             }
 
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-            return View();
-        }
+            foreach (var error in crear.Errors)
+                ModelState.AddModelError("", error.Description);
 
-        public IActionResult AccessDenied()
-        {
-            return View();
+            return View("Register");
         }
     }
-
 }
